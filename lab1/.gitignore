@@ -1,0 +1,11 @@
+*
+!.gitignore
+
+!main.py
+
+!core/
+!core/*.py
+!tests/
+!tests/*.py
+
+!README.md
