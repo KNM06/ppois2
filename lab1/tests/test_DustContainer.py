@@ -24,7 +24,6 @@ class TestDustContainer(unittest.TestCase):
         self.container.add_dust(5)
         with self.assertRaises(ContainerFullException):
             self.container.add_dust(6)
-        # Проверяем, что заполнилось до максимума
         self.assertEqual(self.container.current_fill, 10)
 
     def test_clean(self):
