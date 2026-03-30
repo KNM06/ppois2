@@ -1,0 +1,16 @@
+__pycache__/
+*.py[cod]
+
+.env
+.venv
+env/
+venv/
+ENV/
+
+.idea/
+.vscode/
+
+players.db
+*.db
+
+*.xml
