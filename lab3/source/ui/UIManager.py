@@ -68,7 +68,6 @@ class UIManager:
             font_size=int(font_s * 0.8),
         )
 
-        # --- ВОССТАНОВЛЕННЫЙ КОД МОДАЛЬНОГО ОКНА ---
         modal_w = btn_w + 100
         modal_h = int(screen_h * 0.45)
         self.modal_rect = pygame.Rect(0, 0, modal_w, modal_h)
@@ -95,7 +94,6 @@ class UIManager:
         clip_y = int(screen_h * 0.12)
         screen.set_clip(pygame.Rect(0, clip_y, screen_w, screen_h - clip_y))
 
-        # === ИСПРАВЛЕНИЕ БАГА: Блокируем скролл ДО отрисовки текста ===
         if self.scroll_y < self.max_scroll:
             self.scroll_y = self.max_scroll
 
@@ -131,7 +129,6 @@ class UIManager:
                 screen.blit(text_surface, (x_offset, y_offset))
                 y_offset += font_text.get_linesize() + 4
 
-        # === Вычисляем max_scroll для следующего кадра ===
         content_height = y_offset - (clip_y + 20 + self.scroll_y)
         self.max_scroll = min(0, (screen_h - clip_y) - content_height - 50)
 
