@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <title>Умный пылесос — Web Control</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 900px; margin: 0 auto; padding: 20px; background-color: #f4f7f6; }
+        .card { background: white; border: 1px solid #ddd; padding: 20px; border-radius: 10px; margin-bottom: 20px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .status-on { color: #28a745; font-weight: bold; }
+        .status-off { color: #dc3545; font-weight: bold; }
+        .btn { padding: 8px 15px; border: none; border-radius: 5px; cursor: pointer; color: white; background-color: #007bff; transition: 0.2s; }
+        .btn:hover { opacity: 0.8; }
+        .btn-danger { background-color: #dc3545; }
+        .btn-success { background-color: #28a745; }
+        .btn-warning { background-color: #ffc107; color: #333; }
+        .messages { padding: 15px; margin-bottom: 20px; border-radius: 5px; }
+        .error { background-color: #f8d7da; color: #721c24; }
+        .success { background-color: #d4edda; color: #155724; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .item-row { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #eee; }
+        input, select { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+    </style>
+</head>
+<body>
+
+    <h1>Управление пылесосом</h1>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="messages {{ category }}">{{ message }}</div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="grid">
+        <div>
+            <div class="card">
+                <h2>Статус</h2>
+                <p>Мотор: <span class="{% if vacuum.motor.is_on %}status-on{% else %}status-off{% endif %}">
+                    {% if vacuum.motor.is_on %}ВКЛЮЧЕН{% else %}ВЫКЛЮЧЕН{% endif %}
+                </span></p>
+                <p>Мощность: <strong>{{ vacuum.motor.power_level }}</strong></p>
+                <p>Контейнер: {{ vacuum.container.current_fill }} / {{ vacuum.container.capacity }}</p>
+                <p>Фильтр: {{ vacuum.filter.wear_level }}% износа</p>
+                <p>Насадка: <strong>{{ vacuum.current_attachment.name }}</strong></p>
+                
+                <hr>
+                
+                <form action="/power" method="POST" style="display:inline;">
+                    <button class="btn" type="submit">Вкл/Выкл</button>
+                </form>
+                
+                <form action="/mode" method="POST" style="display:inline;">
+                    <select name="level">
+                        <option value="1" {% if vacuum.motor.power_level == 1 %}selected{% endif %}>1</option>
+                        <option value="2" {% if vacuum.motor.power_level == 2 %}selected{% endif %}>2</option>
+                        <option value="3" {% if vacuum.motor.power_level == 3 %}selected{% endif %}>3</option>
+                    </select>
+                    <button class="btn btn-warning" type="submit">Изменить мощность</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Обслуживание</h2>
+                <div style="display: flex; flex-direction: column; gap: 10px;">
+                    <form action="/maintenance/full" method="POST">
+                        <button class="btn btn-warning" style="width: 100%;" type="submit">Техническое обслуживание</button>
+                    </form>
+                    <div style="display: flex; gap: 10px;">
+                        <form action="/maintenance/empty" method="POST" style="flex: 1;">
+                            <button class="btn btn-danger" style="width: 100%;" type="submit">Очистить контейнер</button>
+                        </form>
+                        <form action="/maintenance/filter" method="POST" style="flex: 1;">
+                            <button class="btn" style="width: 100%;" type="submit">Новый фильтр</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Насадки</h2>
+            <form action="/attachment/add" method="POST" style="margin-bottom: 15px;">
+                <input type="text" name="name" placeholder="Новая насадка" required>
+                <button class="btn btn-success" type="submit">+</button>
+            </form>
+            
+            {% for att in vacuum.attachments %}
+            <div class="item-row">
+                <span>{{ att.name }}</span>
+                <div>
+                    <form action="/attachment/change" method="POST" style="display:inline;">
+                        <input type="hidden" name="attachment_idx" value="{{ loop.index0 }}">
+                        <button class="btn btn-success" type="submit" {% if vacuum.current_attachment.name == att.name %}disabled{% endif %}>
+                            {{ "Active" if vacuum.current_attachment.name == att.name else "Select" }}
+                        </button>
+                    </form>
+                    <form action="/attachment/delete/{{ loop.index0 }}" method="POST" style="display:inline;">
+                        <button class="btn btn-danger" type="submit">Del</button>
+                    </form>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Помещения (Уборка)</h2>
+        <form action="/room/add" method="POST" style="margin-bottom: 15px;">
+            <input type="text" name="name" placeholder="Название комнаты" required>
+            <input type="number" name="dust" placeholder="Пыль" required min="0" style="width: 80px;">
+            <button class="btn btn-success" type="submit">Добавить комнату</button>
+        </form>
+
+        {% for room in rooms %}
+        <div class="item-row">
+            <span><strong>{{ room.name }}</strong> (Пыль: {{ room.dust_amount }})</span>
+            <div>
+                <form action="/clean" method="POST" style="display:inline;">
+                    <input type="hidden" name="room_idx" value="{{ loop.index0 }}">
+                    <button class="btn btn-success" type="submit">Убрать здесь</button>
+                </form>
+                <form action="/room/delete/{{ loop.index0 }}" method="POST" style="display:inline;">
+                    <button class="btn btn-danger" type="submit">Удалить</button>
+                </form>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+
+</body>
+</html>
